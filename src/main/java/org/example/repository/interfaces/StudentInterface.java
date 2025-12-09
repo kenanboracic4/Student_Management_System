@@ -9,13 +9,12 @@ import java.util.Optional;
 public interface StudentInterface {
 
     void addStudent(Student student);
-    void updateStudent(Student student);
 
     void updateStudent(Student student, String index);
 
-    void deleteStudent(Student student) throws SQLException;
+    void deleteStudent(Student student);
 
-    ArrayList<Student> getAllStudents() throws SQLException;
+    ArrayList<Student> getAllStudents();
 
 
     Optional<Student> getStudentByIndex(String indexNumber);

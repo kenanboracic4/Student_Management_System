@@ -32,10 +32,8 @@ public class StudentRepository implements StudentInterface {
 
     }
 
-    @Override
-    public void updateStudent(Student student) {
 
-    }
+
 
     @Override
     public void updateStudent(Student student, String index) {
@@ -58,22 +56,26 @@ public class StudentRepository implements StudentInterface {
     }
 
     @Override
-    public void deleteStudent(Student student) throws SQLException {
+    public void deleteStudent(Student student) {
         String sql = "DELETE FROM Student WHERE brojIndeksa = ? ";
 
         try(Connection connection = DbConnection.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql)){
 
             ps.setString(1, student.getIndexNumber());
+            // DODANO: Izvršavanje upita
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected == 0) {
+                // Opcionalno: baciti izuzetak ako student nije pronađen
+            }
         }catch (SQLException e) {
-            throw new RuntimeException("Nije uspjelo brisanje studenta!");
-
+            // Zadržana je originalna logika bacanja RuntimeException
+            throw new RuntimeException("Nije uspjelo brisanje studenta!", e);
         }
-
     }
 
     @Override
-    public ArrayList<Student> getAllStudents() throws SQLException {
+    public ArrayList<Student> getAllStudents()  {
         String sql = "SELECT * FROM Student";
         ArrayList<Student> students = new ArrayList<>();
 
