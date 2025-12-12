@@ -42,7 +42,7 @@ public class CourseRepository implements CourseInterface {
     }
 
     @Override
-    public void updateCourse(Course course, String courseCode) {
+    public boolean updateCourse(Course course, String courseCode) {
         String sql = "UPDATE Predmet SET naziv = ?, ects = ?, semestar = ? WHERE sifraPredmeta = ?";
         try (Connection connection = DbConnection.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -51,31 +51,37 @@ public class CourseRepository implements CourseInterface {
             ps.setInt(2, course.getEcts());
             ps.setInt(3, course.getSemester());
 
-
             ps.setString(4, courseCode);
 
-            ps.executeUpdate();
+            int rowsAffected = ps.executeUpdate();
+
+
+            return rowsAffected > 0; // true ako je izmijenjeno
+
         } catch (SQLException e) {
             throw new RuntimeException("Nije uspjelo ažuriranje predmeta (Šifra: " + courseCode + ")!", e);
         }
     }
 
     @Override
-    public void deleteCourse(String courseCode) {
+    public boolean deleteCourse(String courseCode) {
         String sql = "DELETE FROM Predmet WHERE sifraPredmeta = ?";
 
         try (Connection connection = DbConnection.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
 
             ps.setString(1, courseCode);
-            ps.executeUpdate();
+            int rowsAffected = ps.executeUpdate();
+
+
+            return rowsAffected > 0; // true ako je izbrisano
 
         } catch (SQLException e) {
+
             throw new RuntimeException("Nije uspjelo brisanje predmeta (Šifra: " + courseCode + ")! "
                     + "Provjerite da li predmet ima povezane upise.", e);
         }
     }
-
     @Override
     public ArrayList<Course> getAllCourses() {
         String sql = "SELECT * FROM Predmet";

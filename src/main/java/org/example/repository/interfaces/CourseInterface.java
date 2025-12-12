@@ -9,9 +9,9 @@ public interface CourseInterface {
 
     void addCourse(Course course);
 
-    void updateCourse(Course course, String courseCode);
+    boolean updateCourse(Course course, String courseCode);
 
-    void deleteCourse(String courseCode);
+    boolean deleteCourse(String courseCode);
 
     ArrayList<Course> getAllCourses();
 

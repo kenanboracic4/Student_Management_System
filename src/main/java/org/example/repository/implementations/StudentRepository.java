@@ -52,7 +52,7 @@ public class StudentRepository implements StudentInterface {
             return rowsAffected > 0;
 
         } catch (SQLException e) {
-            // Ako dođe do greške u bazi (npr. problem s konekcijom), bacamo RuntimeException
+
             throw new RuntimeException("Nije uspjelo azuriranje studenta!", e);
         }
     }

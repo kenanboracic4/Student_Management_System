@@ -31,21 +31,18 @@ public class CourseService {
         validateCourse(course, courseCode);
 
 
-        if (courseRepository.getCourseByCode(courseCode).isEmpty()) {
+        if (!courseRepository.updateCourse(course, courseCode)) {
+
             throw new IllegalArgumentException("Predmet sa šifrom " + courseCode + " nije pronađen za ažuriranje.");
         }
-
-        courseRepository.updateCourse(course, courseCode);
     }
 
 
     public void deleteCourse(String courseCode) {
-        if (courseCode == null || courseCode.trim().isEmpty()) {
-            throw new IllegalArgumentException("Šifra predmeta za brisanje je obavezna.");
+        if (!courseRepository.deleteCourse(courseCode)) {
+
+            throw new IllegalArgumentException("Predmet sa šifrom " + courseCode + " nije pronađen za brisanje.");
         }
-
-
-        courseRepository.deleteCourse(courseCode);
     }
 
 
