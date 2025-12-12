@@ -111,12 +111,13 @@ public class Enrollment {
 
     @Override
     public String toString() {
-        return "Enrollment{" +
-                "studentIndexNumber='" + studentIndexNumber + '\'' +
-                ", courseCode='" + courseCode + '\'' +
-                ", academicYear='" + academicYear + '\'' +
-                ", grade=" + grade +
-                // ... ostali atributi
-                '}';
+        return "Upis " +
+                "Indeks studenta= '" + studentIndexNumber + '\'' +
+                ", Sifra predmeta= ' " + courseCode + '\'' +
+                ", Akademska godina = '" + academicYear + '\'' +
+                ", Ocjena =" + grade +
+                 ", Datum ocjene = " + gradeDate +
+                ", Razlog izmjene = " + changeReason +
+                ", Datum izmjene = " + changeDate;
     }
 }
