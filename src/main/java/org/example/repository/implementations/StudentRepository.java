@@ -63,13 +63,13 @@ public class StudentRepository implements StudentInterface {
             PreparedStatement ps = connection.prepareStatement(sql)){
 
             ps.setString(1, student.getIndexNumber());
-            // DODANO: Izvršavanje upita
+
             int rowsAffected = ps.executeUpdate();
             if (rowsAffected == 0) {
-                // Opcionalno: baciti izuzetak ako student nije pronađen
+                throw new RuntimeException("Traženi student nije pronađen!");
             }
         }catch (SQLException e) {
-            // Zadržana je originalna logika bacanja RuntimeException
+
             throw new RuntimeException("Nije uspjelo brisanje studenta!", e);
         }
     }

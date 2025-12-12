@@ -4,25 +4,30 @@ import java.util.Objects;
 
 public class Course {
 
-    private int id;
+    private String courseCode;
     private String name;
     private int ects;
+    private int semester;
 
-    public Course(int id, String name, int ects) {
-        this.id = id;
+
+    public Course(String courseCode, String name, int ects, int semester) {
+        this.courseCode = courseCode;
         this.name = name;
         this.ects = ects;
+        this.semester = semester;
     }
 
-    public Course(String name, int ects) {
+    // konstruktor bez sifre predmeta
+    public Course(String name, int ects, int semester) {
         this.name = name;
         this.ects = ects;
+        this.semester = semester;
     }
 
     // Getters and Setters
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public String getCourseCode() { return courseCode; }
+    public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -30,24 +35,30 @@ public class Course {
     public int getEcts() { return ects; }
     public void setEcts(int ects) { this.ects = ects; }
 
+    public int getSemester() { return semester; }
+    public void setSemester(int semester) { this.semester = semester; }
+
     @Override
     public String toString() {
         return "Predmet{" +
-                "id=" + id +
-                ", Naziv: ='" + name + '\'' +
+                "sifraPredmeta='" + courseCode + '\'' +
+                ", Naziv='" + name + '\'' +
                 ", ects=" + ects +
+                ", semestar=" + semester +
                 '}';
     }
+
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Course course = (Course) o;
-        return id == course.id && ects == course.ects && Objects.equals(name, course.name);
+
+        return ects == course.ects && semester == course.semester && Objects.equals(courseCode, course.courseCode) && Objects.equals(name, course.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, ects);
+        return Objects.hash(courseCode, name, ects, semester);
     }
 }
