@@ -35,22 +35,20 @@ public class StudentService {
         validateStudent(student);
 
 
-        if (studentRepository.getStudentByIndex(index).isEmpty()) {
+        if (!studentRepository.updateStudent(student, index)) {
             throw new IllegalArgumentException("Student sa indeksom " + index + " nije pronađen za ažuriranje.");
         }
 
 
-        studentRepository.updateStudent(student, index);
+
     }
 
 
     public void deleteStudent(Student student) {
 
-        if (studentRepository.getStudentByIndex(student.getIndexNumber()).isEmpty()) {
+        if (!studentRepository.deleteStudent(student)) {
             throw new IllegalArgumentException("Student sa indeksom " + student.getIndexNumber() + " nije pronađen za brisanje.");
         }
-
-        studentRepository.deleteStudent(student);
     }
 
 

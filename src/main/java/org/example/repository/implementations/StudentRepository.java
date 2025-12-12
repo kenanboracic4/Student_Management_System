@@ -33,30 +33,32 @@ public class StudentRepository implements StudentInterface {
     }
 
 
-
-
     @Override
-    public void updateStudent(Student student, String index) {
+    public boolean updateStudent(Student student, String index) {
         String sql = "UPDATE Student SET ime = ?, prezime = ?, studijskiProgram = ?, godinaUpisa = ? WHERE brojIndeksa = ?";
 
-       try(Connection connection = DbConnection.getConnection();
-       PreparedStatement ps = connection.prepareStatement(sql)) {
-           ps.setString(1, student.getFirstName());
-           ps.setString(2, student.getLastName());
-           ps.setString(3, student.getStudyProgram());
-           ps.setInt(4, student.getEnrollmentYear());
+        try(Connection connection = DbConnection.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, student.getFirstName());
+            ps.setString(2, student.getLastName());
+            ps.setString(3, student.getStudyProgram());
+            ps.setInt(4, student.getEnrollmentYear());
 
-           ps.setString(5, index);
+            ps.setString(5, index);
 
-           ps.executeUpdate();
-       } catch (SQLException e) {
-           throw new RuntimeException("Nije uspjelo azuriranje studenta!");
+            int rowsAffected = ps.executeUpdate();
 
-       }
+            // Vraća true ako je pogođen bar jedan red, inače false
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            // Ako dođe do greške u bazi (npr. problem s konekcijom), bacamo RuntimeException
+            throw new RuntimeException("Nije uspjelo azuriranje studenta!", e);
+        }
     }
 
     @Override
-    public void deleteStudent(Student student) {
+    public boolean deleteStudent(Student student) {
         String sql = "DELETE FROM Student WHERE brojIndeksa = ? ";
 
         try(Connection connection = DbConnection.getConnection();
@@ -65,15 +67,14 @@ public class StudentRepository implements StudentInterface {
             ps.setString(1, student.getIndexNumber());
 
             int rowsAffected = ps.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new RuntimeException("Traženi student nije pronađen!");
-            }
-        }catch (SQLException e) {
 
-            throw new RuntimeException("Nije uspjelo brisanje studenta!", e);
+            // Vraća true ako je obrisan bar jedan red, inače false
+            return rowsAffected > 0;
+
+        }catch (SQLException e) {
+            throw new RuntimeException("Nije uspjelo dohvaćanje studenta po indeksu!", e);
         }
     }
-
     @Override
     public ArrayList<Student> getAllStudents()  {
         String sql = "SELECT * FROM Student";
