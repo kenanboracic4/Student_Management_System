@@ -158,6 +158,19 @@ public class EnrollmentRepository implements EnrollmentInterface {
     @Override
     public List<Enrollment> findAll() {
 
-        return new ArrayList<>();
+        String sql = "SELECT * FROM Upis";
+        List<Enrollment> enrollments = new ArrayList<>();
+
+        try (Connection conn = DbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                enrollments.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Greška pri dohvatu svih upisa: " + e.getMessage(), e);
+        }
+        return enrollments;
     }
 }
