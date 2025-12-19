@@ -13,7 +13,7 @@ public interface StudentInterface {
 
     boolean updateStudent(Student student, String index);
 
-
+    ArrayList<Student> findByLastNamePrefix(String prefix);
     boolean deleteStudent(Student student);
 
     ArrayList<Student> getAllStudents();

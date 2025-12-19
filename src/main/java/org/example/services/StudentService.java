@@ -66,6 +66,11 @@ public class StudentService {
 
 
     private void validateStudent(Student student) {
+
+        if (student.getEnrollmentYear() < 2020 || student.getEnrollmentYear() > 2050) {
+            throw new IllegalArgumentException("Godina upisa mora biti u opsegu 2020-2050.");
+        }
+        
         if (student == null) {
             throw new IllegalArgumentException("Student objekat ne smije biti null.");
         }

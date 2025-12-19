@@ -123,7 +123,23 @@ public class StudentRepository implements StudentInterface {
         
     }
 
-
+    @Override
+    public ArrayList<Student> findByLastNamePrefix(String prefix) {
+        String sql = "SELECT * FROM Student WHERE prezime LIKE ?";
+        ArrayList<Student> students = new ArrayList<>();
+        try (Connection connection = DbConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, prefix + "%"); // Prefix search
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    students.add(mapRowToStudent(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Greška pri pretrazi studenata!", e);
+        }
+        return students;
+    }
 
     private Student mapRowToStudent(ResultSet rs) throws SQLException {
         
