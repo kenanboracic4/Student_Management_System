@@ -43,6 +43,12 @@ public class CourseService {
 
             throw new IllegalArgumentException("Predmet sa šifrom " + courseCode + " nije pronađen za brisanje.");
         }
+
+        if (courseRepository.hasEnrollments(courseCode)) {
+            throw new IllegalStateException("Nije dozvoljeno brisanje: Predmet ima aktivne upise studenata.");
+        }
+
+        courseRepository.deleteCourse(courseCode);
     }
 
 

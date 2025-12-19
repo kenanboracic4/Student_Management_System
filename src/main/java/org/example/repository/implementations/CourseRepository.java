@@ -82,6 +82,25 @@ public class CourseRepository implements CourseInterface {
                     + "Provjerite da li predmet ima povezane upise.", e);
         }
     }
+
+    // metoda za provjeru upisa
+    @Override
+    public boolean hasEnrollments(String courseCode) {
+        String sql = "SELECT COUNT(*) FROM Upis WHERE sifraPredmeta = ?";
+        try (Connection connection = DbConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, courseCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0; // Vraca true ako ima upisa
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Greška pri provjeri upisa za predmet.", e);
+        }
+        return false;
+    }
+
     @Override
     public ArrayList<Course> getAllCourses() {
         String sql = "SELECT * FROM Predmet";

@@ -18,4 +18,6 @@ public interface CourseInterface {
     Optional<Course> getCourseByCode(String courseCode);
 
     ArrayList<Course> findCoursesByNamePrefix(String prefix);
+
+    boolean hasEnrollments(String courseCode);
 }
