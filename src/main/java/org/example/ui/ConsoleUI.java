@@ -26,6 +26,7 @@ public class ConsoleUI {
     public void start() {
         boolean exit = false;
         while (!exit) {
+            System.out.println();
             System.out.println("\n========================================");
             System.out.println("   SISTEM STUDENTSKA SLUŽBA (v1.0)");
             System.out.println("========================================");
@@ -50,13 +51,14 @@ public class ConsoleUI {
         while (!back) {
             System.out.println("\n--- MENI ZA REFERENTA ---");
             System.out.println("1. Registruj novog studenta");
-            System.out.println("2. Pretraga studenata (prefix prezimena)");
+            System.out.println("2. Pretraga studenata (po prezimenu)");
             System.out.println("3. Dodaj novi predmet");
             System.out.println("4. Upis studenta na predmet");
             System.out.println("5. Unos ili izmjena ocjene");
             System.out.println("6. Karton studenta (Generisanje izvještaja)");
             System.out.println("0. Odjava");
             System.out.print("Izbor: ");
+            System.out.println();
 
             String choice = scanner.nextLine();
             try {
@@ -102,12 +104,13 @@ public class ConsoleUI {
         Student s = new Student(index, firstName, lastName, program, year);
         studentService.addStudent(s);
         System.out.println("Sistem: Student uspješno registrovan.");
+        System.out.println();
     }
 
     private void handleSearchStudents() {
         System.out.print("Unesite početak prezimena za pretragu: ");
         String prefix = scanner.nextLine();
-        // Pretpostavka da je metoda findByLastNamePrefix implementirana u StudentService
+
         List<Student> results = studentService.findStudentsByLastNamePrefix(prefix);
         if (results.isEmpty()) {
             System.out.println("Nema rezultata za uneseni prefix.");

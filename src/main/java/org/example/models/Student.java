@@ -11,7 +11,7 @@ public class Student {
     private String studyProgram;
     private int enrollmentYear;
 
-    public Student(String firstName, String lastName, String indexNumber, String studyProgram, int enrollmentYear) {
+    public Student(String indexNumber,String firstName, String lastName, String studyProgram, int enrollmentYear) {
 
         this.firstName = firstName;
         this.lastName = lastName;
@@ -59,13 +59,12 @@ public class Student {
 
     @Override
     public String toString() {
-        return "Student{" +
-                ", Ime='" + firstName + '\'' +
-                ", Prezime='" + lastName + '\'' +
-                ", Broj Indeksa='" + indexNumber + '\'' +
-                ", StudijskiProgram= " + studyProgram +
-                ", Godina Upisa= " + enrollmentYear +
-                '}';
+        return "Student: " +
+                " Ime = " + firstName + ' ' +
+                ", Prezime = " + lastName + ' ' +
+                ", Broj Indeksa = " + indexNumber + ' ' +
+                ", StudijskiProgram = " + studyProgram +
+                ", Godina Upisa = " + enrollmentYear;
     }
 
     @Override

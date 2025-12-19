@@ -1,6 +1,9 @@
 package org.example.services;
 
+import org.example.models.Course;
 import org.example.models.Enrollment;
+import org.example.models.Student;
+import org.example.models.StudentReport;
 import org.example.repository.implementations.EnrollmentRepository;
 
 
@@ -64,11 +67,12 @@ public class EnrollmentService {
     public boolean enterOrUpdateGrade(String studentIndexNumber, String courseCode, String academicYear,
                                       Integer newGrade, String reason) {
 
-
+        if(!academicYear.contains("/")){
+            throw new IllegalArgumentException("Akademska godina mora biti u formatu YYYY/YYYY");
+        }
         if (newGrade != null && (newGrade < 5 || newGrade > 10)) {
             throw new IllegalArgumentException("Ocjena mora biti cijeli broj između 5 i 10.");
         }
-
 
         Optional<Enrollment> enrollmentOpt = repository.findByPrimaryKey(studentIndexNumber, courseCode, academicYear);
 
@@ -80,13 +84,13 @@ public class EnrollmentService {
         String currentDate = LocalDate.now().toString();
 
 
-        if (enrollment.getGrade() == null) {  // Prvi unos ocjene
+        if (enrollment.getGrade() == null) {
 
             enrollment.setGrade(newGrade);
             enrollment.setGradeDate(currentDate);
             enrollment.setChangeReason(null);
             enrollment.setChangeDate(null);
-        } else { // Izmjena postojeće ocjene
+        } else {
 
 
             if (reason == null || reason.trim().isEmpty()) {
@@ -98,7 +102,7 @@ public class EnrollmentService {
             enrollment.setChangeDate(currentDate);
         }
 
-        // azuriranje u bazi
+
         return repository.update(enrollment);
     }
 
@@ -129,5 +133,42 @@ public class EnrollmentService {
 
     public List<Enrollment> getAllEnrollments(){
         return  repository.findAll();
+    }
+
+
+    public StudentReport generateStudentReport(String indexNumber) {
+
+        Optional<Student> studentOpt = studentService.getStudentByIndex(indexNumber);
+        if (studentOpt.isEmpty()) {
+            throw new IllegalArgumentException("Student sa indeksom '" + indexNumber + "' nije pronađen.");
+        }
+        Student student = studentOpt.get();
+
+
+        List<Enrollment> allEnrollments = repository.findAll().stream()
+                .filter(e -> e.getStudentIndexNumber().equals(indexNumber))
+                .toList();
+
+        int totalEcts = 0;
+        int gradeSum = 0;
+        int gradedCount = 0;
+
+        for (Enrollment e : allEnrollments) {
+            Optional<Course> courseOpt = courseService.getCourseByCode(e.getCourseCode());
+
+            if (courseOpt.isPresent()) {
+                Course course = courseOpt.get();
+
+                if (e.getGrade() != null && e.getGrade() > 5) {
+                    totalEcts += course.getEcts();
+                    gradeSum += e.getGrade();
+                    gradedCount++;
+                }
+            }
+        }
+
+        double averageGrade = (gradedCount > 0) ? (double) gradeSum / gradedCount : 5.0;
+
+        return new StudentReport(student, allEnrollments, totalEcts, averageGrade);
     }
 }

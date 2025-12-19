@@ -64,16 +64,22 @@ public class StudentService {
         return studentRepository.getStudentByIndex(indexNumber);
     }
 
+    public ArrayList<Student> findStudentsByLastNamePrefix(String prefix) {
+
+        if (prefix == null || prefix.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return studentRepository.findByLastNamePrefix(prefix);
+    }
 
     private void validateStudent(Student student) {
 
         if (student.getEnrollmentYear() < 2020 || student.getEnrollmentYear() > 2050) {
             throw new IllegalArgumentException("Godina upisa mora biti u opsegu 2020-2050.");
         }
-        
-        if (student == null) {
-            throw new IllegalArgumentException("Student objekat ne smije biti null.");
-        }
+
+
 
 
         if (student.getIndexNumber() == null || student.getIndexNumber().trim().isEmpty()) {
