@@ -5,6 +5,10 @@ import StudentManagmentSystem.repository.interfaces.*;
 import StudentManagmentSystem.services.*;
 import StudentManagmentSystem.ui.ConsoleUI;
 
+import javax.swing.*;
+
+import StudentManagmentSystem.ui.gui.auth.LoginFrame;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -39,14 +43,27 @@ public class Main {
 
         // 4. Pokretanje UI-a sa SVA ČETIRI potrebna servisa
         // Ovo rješava "actual and formal argument lists differ in length" grešku
-        ConsoleUI ui = new ConsoleUI(
-                studentService,
-                courseService,
-                enrollmentService,
-                referentService
-        );
+//        ConsoleUI ui = new ConsoleUI(
+//                studentService,
+//                courseService,
+//                enrollmentService,
+//                referentService
+//        );
+//        ui.start();
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Postavljamo "Look and Feel" da aplikacija izgleda kao tvoj operativni sistem
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-        System.out.println("Sistem uspješno inicijalizovan.");
-        ui.start();
+                // Kreiramo Login prozor i prosljeđujemo mu servise
+                LoginFrame login = new LoginFrame(studentService, courseService, enrollmentService, referentService);
+                login.setVisible(true);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
     }
+
 }

@@ -56,16 +56,14 @@ public class Course {
     public String getAddedByReferentId() { return addedByReferentId; }
     public void setAddedByReferentId(String addedByReferentId) { this.addedByReferentId = addedByReferentId; }
 
+
     @Override
     public String toString() {
-        return "Course{" +
-                "courseCode='" + courseCode + '\'' +
-                ", name='" + name + '\'' +
-                ", ects=" + ects +
-                ", semester=" + semester +
-                ", addedBy='" + addedByReferentId + '\'' +
-                ", created='" + createdAt + '\'' +
-                '}';
+        return "Šifra: " + courseCode +
+                ", Naziv: " + name +
+                ", ECTS: " + ects +
+                ", Semestar: " + semester +
+                ", Dodao: " + (addedByReferentId != null ? addedByReferentId : "Sistem");
     }
 
     @Override

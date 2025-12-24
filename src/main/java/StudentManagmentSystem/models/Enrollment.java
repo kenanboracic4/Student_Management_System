@@ -83,16 +83,12 @@ public class Enrollment {
     public int hashCode() {
         return Objects.hash(studentIndexNumber, courseCode, academicYear);
     }
-
     @Override
     public String toString() {
-        return "Enrollment{" +
-                "Indeks='" + studentIndexNumber + '\'' +
-                ", Predmet='" + courseCode + '\'' +
-                ", Akademska Godina='" + academicYear + '\'' +
-                ", Ocjena=" + grade +
-                ", Dodao Referent='" + addedByReferentId + '\'' +
-                ", Izmijenio Referent='" + modifiedByReferentId + '\'' +
-                '}';
+        return "Indeks: " + studentIndexNumber +
+                "| Predmet: " + courseCode +
+                "| Akademska godina: " + academicYear +
+                "| Ocjena: " + (grade > 5 ? grade : "Nije ocijenjen") +
+                "| Referent: " + addedByReferentId;
     }
 }
