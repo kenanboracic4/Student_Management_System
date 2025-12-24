@@ -1,4 +1,4 @@
-package org.example.models;
+package StudentManagmentSystem.models;
 
 import java.util.List;
 
