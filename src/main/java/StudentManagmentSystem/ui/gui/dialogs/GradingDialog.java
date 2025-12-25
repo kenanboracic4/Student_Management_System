@@ -1,58 +1,97 @@
 package StudentManagmentSystem.ui.gui.dialogs;
 
-
-
-import StudentManagmentSystem.services.EnrollmentService;
-import StudentManagmentSystem.ui.gui.util.SwingUtil;
+import StudentManagmentSystem.models.Enrollment;
+import StudentManagmentSystem.services.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class GradingDialog extends JDialog {
     private final EnrollmentService enrollmentService;
-    private final String studentIndex;
-    private final String courseCode;
-    private JComboBox<Integer> comboGrades;
+    private final Enrollment enrollment;
+    private JComboBox<Integer> cbGrades;
+    private JTextField txtReason;
+    private boolean success = false;
 
-    public GradingDialog(Frame parent, EnrollmentService service, String index, String code) {
-        super(parent, "Unos Ocjene", true);
-        this.enrollmentService = service;
-        this.studentIndex = index;
-        this.courseCode = code;
+    public GradingDialog(Frame parent, EnrollmentService es, Enrollment enr) {
+        super(parent, "Ocjenjivanje", true);
+        this.enrollmentService = es;
+        this.enrollment = enr;
+
+        setUndecorated(false);
+        setSize(400, 450);
+        setLocationRelativeTo(parent);
 
         initUI();
     }
 
     private void initUI() {
-        setSize(400, 300);
-        setLocationRelativeTo(getOwner());
-        setLayout(new BorderLayout());
-        getContentPane().setBackground(Color.WHITE);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(Color.WHITE);
 
-        JPanel pnlContent = new JPanel(new GridLayout(3, 1, 10, 10));
-        pnlContent.setBackground(Color.WHITE);
-        pnlContent.setBorder(new EmptyBorder(30, 40, 30, 40));
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(15, 23, 42)); // Tamna Navy
+        header.setPreferredSize(new Dimension(0, 70));
+        JLabel title = new JLabel("  UNOS OCJENE");
+        title.setForeground(Color.WHITE);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        header.add(title, BorderLayout.WEST);
+        root.add(header, BorderLayout.NORTH);
 
-        JLabel lblInfo = new JLabel("Unesite ocjenu za predmet: " + courseCode);
-        lblInfo.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        // Body
+        JPanel body = new JPanel(new GridLayout(0, 1, 0, 15));
+        body.setBackground(Color.WHITE);
+        body.setBorder(new EmptyBorder(25, 30, 25, 30));
 
-        comboGrades = new JComboBox<>(new Integer[]{6, 7, 8, 9, 10});
-        SwingUtil.setModernBorder(comboGrades);
+        body.add(createLabel("STUDENT: " + enrollment.getStudentIndexNumber()));
+        body.add(createLabel("PREDMET: " + enrollment.getCourseCode()));
 
-        JButton btnSave = new JButton("POTVRDI OCJENU");
-        SwingUtil.styleButton(btnSave, SwingUtil.COLOR_PRIMARY, Color.WHITE);
+        body.add(new JLabel("Izaberite ocjenu:"));
+        cbGrades = new JComboBox<>(new Integer[]{5, 6, 7, 8, 9, 10});
+        cbGrades.setPreferredSize(new Dimension(0, 40));
+        body.add(cbGrades);
 
-        btnSave.addActionListener(e -> {
-            int grade = (int) comboGrades.getSelectedItem();
-            // enrollmentService.updateGrade(studentIndex, courseCode, grade);
-            JOptionPane.showMessageDialog(this, "Ocjena uspješno upisana!");
-            dispose();
-        });
+        body.add(new JLabel("Razlog izmjene (ako se ocjena mijenja):"));
+        txtReason = new JTextField();
+        txtReason.setPreferredSize(new Dimension(0, 40));
+        body.add(txtReason);
 
-        pnlContent.add(lblInfo);
-        pnlContent.add(comboGrades);
-        pnlContent.add(btnSave);
+        root.add(body, BorderLayout.CENTER);
 
-        add(pnlContent, BorderLayout.CENTER);
+        // Footer btn
+        JButton btnSave = new JButton("POTVRDI I SPREMI");
+        btnSave.setBackground(new Color(79, 70, 229));
+        btnSave.setForeground(Color.WHITE);
+        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnSave.setPreferredSize(new Dimension(0, 55));
+        btnSave.setFocusPainted(false);
+        btnSave.setBorderPainted(false);
+        btnSave.addActionListener(e -> save());
+
+        root.add(btnSave, BorderLayout.SOUTH);
+        add(root);
     }
+
+    private JLabel createLabel(String txt) {
+        JLabel l = new JLabel(txt);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setForeground(new Color(51, 65, 85));
+        return l;
+    }
+
+    private void save() {
+        try {
+            String ref = ReferentService.getCurrentUser().getReferentId();
+            enrollmentService.enterOrUpdateGrade(
+                    enrollment.getStudentIndexNumber(), enrollment.getCourseCode(),
+                    enrollment.getAcademicYear(), (Integer)cbGrades.getSelectedItem(),
+                    txtReason.getText(), ref
+            );
+            success = true;
+            dispose();
+        } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+    }
+
+    public boolean isSuccess() { return success; }
 }
