@@ -1,7 +1,9 @@
 package StudentManagmentSystem.ui.gui.components;
 
 import StudentManagmentSystem.models.Student;
+import StudentManagmentSystem.services.EnrollmentService;
 import StudentManagmentSystem.services.StudentService;
+import StudentManagmentSystem.ui.gui.dashboard.MainDashboard; // IMPORT DODAN
 import StudentManagmentSystem.ui.gui.dialogs.AddStudentDialog;
 
 import javax.swing.*;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 
 public class StudentTablePanel extends JPanel {
     private final StudentService studentService;
+    private final EnrollmentService enrollmentService; // DODANO POLJE
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
@@ -32,8 +35,11 @@ public class StudentTablePanel extends JPanel {
     private final Color COLOR_TEXT_SEC = new Color(148, 163, 184);
     private final Color COLOR_BORDER = new Color(226, 232, 240);
 
-    public StudentTablePanel(StudentService studentService) {
+    // KONSTRUKTOR SADA PRIMA OBA SERVISA
+    public StudentTablePanel(StudentService studentService, EnrollmentService enrollmentService) {
         this.studentService = studentService;
+        this.enrollmentService = enrollmentService; // INICIJALIZACIJA
+
         setLayout(new BorderLayout());
         setBackground(COLOR_BG);
         setBorder(new EmptyBorder(30, 40, 30, 40));
@@ -42,7 +48,6 @@ public class StudentTablePanel extends JPanel {
         initTable();
         refreshData();
 
-        // REFRESH NA 1 SEKUNDU (1000ms)
         searchTimer = new Timer(1000, e -> handleSearch());
         searchTimer.setRepeats(false);
     }
@@ -60,7 +65,6 @@ public class StudentTablePanel extends JPanel {
         lblSection.setForeground(COLOR_TEXT_MAIN);
         leftPanel.add(lblSection);
 
-        // SMANJEN SEARCH DA NE GUŠI DUGMIĆE
         txtSearch = new JTextField("Pretraži...");
         txtSearch.setPreferredSize(new Dimension(220, 40));
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -104,7 +108,6 @@ public class StudentTablePanel extends JPanel {
 
         btnAdd.addActionListener(e -> {
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
-            // Koristimo direktan Frame cast da budemo sigurni
             AddStudentDialog dialog = new AddStudentDialog((Frame) parentWindow, studentService);
             dialog.setVisible(true);
             if (dialog.isStudentAdded()) refreshData();
@@ -157,6 +160,22 @@ public class StudentTablePanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createLineBorder(COLOR_BORDER, 1));
         scrollPane.getViewport().setBackground(COLOR_BG);
         add(scrollPane, BorderLayout.CENTER);
+
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int row = table.getSelectedRow();
+                    if (row != -1) {
+                        String studentIndex = table.getValueAt(row, 0).toString();
+
+                        // KORISTI SE enrollmentService IZ POLJA KLASE
+                        StudentReportPanel reportPanel = new StudentReportPanel(enrollmentService, studentIndex);
+                        MainDashboard.getInstance().updateContent(reportPanel);
+                    }
+                }
+            }
+        });
     }
 
     private JButton createModernButton(String text, Color bg) {

@@ -25,17 +25,17 @@ public class EnrollmentService {
     }
 
     public Enrollment registerNewEnrollment(Enrollment enrollment) {
-        // Osnovna validacija
+        // 1. Osnovna validacija polja
         if (enrollment.getStudentIndexNumber() == null || enrollment.getCourseCode() == null || enrollment.getAcademicYear() == null) {
             throw new IllegalArgumentException("Podaci Indeks, Predmet i Akademska godina su obavezni.");
         }
 
-        // NOVO: Provjera referenta koji vrši upis
+        // 2. Provjera referenta
         if (enrollment.getAddedByReferentId() == null || enrollment.getAddedByReferentId().trim().isEmpty()) {
             throw new IllegalArgumentException("ID referenta koji vrši upis je obavezan.");
         }
 
-        // Provjera postojanja studenta i predmeta
+        // 3. Provjera postojanja studenta i predmeta u bazi
         if (studentService.getStudentByIndex(enrollment.getStudentIndexNumber()).isEmpty()) {
             throw new IllegalArgumentException("Student sa indeksom '" + enrollment.getStudentIndexNumber() + "' ne postoji.");
         }
@@ -44,15 +44,25 @@ public class EnrollmentService {
             throw new IllegalArgumentException("Predmet sa šifrom '" + enrollment.getCourseCode() + "' ne postoji.");
         }
 
-        // Provjera duplikata
-        Optional<Enrollment> existing = repository.findByPrimaryKey(
-                enrollment.getStudentIndexNumber(),
-                enrollment.getCourseCode(),
-                enrollment.getAcademicYear()
-        );
+        // --- NOVO: PROVJERA INTEGRITETA (SPREČAVANJE DUPLIH OCJENA) ---
 
-        if (existing.isPresent()) {
-            throw new IllegalStateException("Student je već upisan na ovaj predmet u datoj akademskoj godini.");
+        // Provjeravamo sve upise ovog studenta kroz sve godine
+        List<Enrollment> allStudentEnrollments = repository.findAll().stream()
+                .filter(e -> e.getStudentIndexNumber().equals(enrollment.getStudentIndexNumber()))
+                .toList();
+
+        for (Enrollment existing : allStudentEnrollments) {
+            // Ako već ima taj predmet položen (ocjena 6-10) u bilo kojoj godini
+            if (existing.getCourseCode().equals(enrollment.getCourseCode()) &&
+                    existing.getGrade() != null && existing.getGrade() >= 6) {
+                throw new IllegalStateException("Student je već položio predmet '" + enrollment.getCourseCode() + "'. Nije dozvoljen ponovni upis.");
+            }
+
+            // Ako je već upisan na isti predmet u ISTOJ akademskoj godini (bez obzira na ocjenu)
+            if (existing.getCourseCode().equals(enrollment.getCourseCode()) &&
+                    existing.getAcademicYear().equals(enrollment.getAcademicYear())) {
+                throw new IllegalStateException("Student je već upisan na ovaj predmet u akademskoj godini " + enrollment.getAcademicYear());
+            }
         }
 
         return repository.create(enrollment);
@@ -84,7 +94,6 @@ public class EnrollmentService {
         if (enrollment.getGrade() == null || enrollment.getGrade() == 0) {
             enrollment.setGrade(newGrade);
             enrollment.setGradeDate(currentDate);
-            // Referent koji je dodao ocjenu se ovdje bilježi kao onaj koji je "izvršio izmjenu" u odnosu na prazan upis
             enrollment.setModifiedByReferentId(referentId);
         }
         // Slučaj 2: Izmjena postojeće ocjene
@@ -113,8 +122,6 @@ public class EnrollmentService {
         }
         return true;
     }
-
-    // --- Ostale metode ostaju slične, ali koriste ažurirani Repository ---
 
     public Optional<Enrollment> getEnrollment(String studentIndexNumber, String courseCode, String academicYear) {
         return repository.findByPrimaryKey(studentIndexNumber, courseCode, academicYear);

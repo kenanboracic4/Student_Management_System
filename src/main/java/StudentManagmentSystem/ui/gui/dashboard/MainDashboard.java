@@ -4,26 +4,31 @@ import StudentManagmentSystem.services.*;
 import StudentManagmentSystem.ui.gui.components.CourseTablePanel;
 import StudentManagmentSystem.ui.gui.components.EnrollmentPanel;
 import StudentManagmentSystem.ui.gui.components.StudentTablePanel;
+import StudentManagmentSystem.ui.gui.components.StudentReportPanel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class MainDashboard extends JFrame {
+    private static MainDashboard instance;
     private final StudentService studentService;
     private final CourseService courseService;
     private final EnrollmentService enrollmentService;
     private final ReferentService referentService;
 
     // --- MODERNA PALETA BOJA ---
-    private final Color sidebarColor = new Color(33, 47, 61);    // Deep Midnight
-    private final Color activeColor = new Color(52, 152, 219);   // Bright Blue
-    private final Color contentBg = Color.WHITE;                 // Čista bijela za radni prostor
-    private final Color textColor = new Color(236, 240, 241);    // Off-white za tekst
+    private final Color sidebarColor = new Color(33, 47, 61);
+    private final Color activeColor = new Color(52, 152, 219);
+    private final Color contentBg = Color.WHITE;
+    private final Color textColor = new Color(236, 240, 241);
 
     private JPanel pnlContent;
+    private JPanel pnlSidebar; // Izvučeno kao polje da bi ga mogli sakriti
+    private JLabel lblSectionTitle;
 
     public MainDashboard(StudentService ss, CourseService cs, EnrollmentService es, ReferentService rs) {
+        instance = this;
         this.studentService = ss;
         this.courseService = cs;
         this.enrollmentService = es;
@@ -32,29 +37,36 @@ public class MainDashboard extends JFrame {
         initUI();
     }
 
+    public static MainDashboard getInstance() {
+        return instance;
+    }
+
     private void initUI() {
         setTitle("Sistem Studentska Služba v2.0 - Kontrolni Panel");
-        setSize(1280, 800);
+        setSize(1350, 850);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
 
         // --- SIDEBAR ---
-        JPanel pnlSidebar = new JPanel();
+        pnlSidebar = new JPanel();
         pnlSidebar.setBackground(sidebarColor);
         pnlSidebar.setPreferredSize(new Dimension(280, 800));
         pnlSidebar.setLayout(new BoxLayout(pnlSidebar, BoxLayout.Y_AXIS));
 
-        // Profil sekcija u sidebaru
+        // Profil sekcija
         JPanel pnlProfile = new JPanel(new GridBagLayout());
         pnlProfile.setOpaque(false);
         pnlProfile.setBorder(new EmptyBorder(40, 10, 40, 10));
 
-        String ime = ReferentService.getCurrentUser() != null ?
-                ReferentService.getCurrentUser().getFirstName() : "Gost";
+        // Dinamički prikaz imena (Radi i za studente i za referente)
+        String ime = "Gost";
+        if (ReferentService.getCurrentUser() != null) {
+            ime = ReferentService.getCurrentUser().getFirstName();
+        }
 
-        JLabel lblUser = new JLabel("<html><center>Prijavljeni referent:<br><b style='font-size:14px; color:white;'>"
+        JLabel lblUser = new JLabel("<html><center>Prijavljeni korisnik:<br><b style='font-size:14px; color:white;'>"
                 + ime.toUpperCase() + "</b></center></html>");
         lblUser.setForeground(new Color(171, 178, 185));
         lblUser.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -62,28 +74,29 @@ public class MainDashboard extends JFrame {
         pnlSidebar.add(pnlProfile);
 
         // Meni dugmići
+        pnlSidebar.add(createMenuButton("📊  STATISTIKA", e -> showStatPanel()));
         pnlSidebar.add(createMenuButton("👤  STUDENTI", e -> showStudentPanel()));
         pnlSidebar.add(createMenuButton("📚  PREDMETI", e -> showCoursePanel()));
         pnlSidebar.add(createMenuButton("📝  UPISI I OCJENE", e -> showEnrollmentPanel()));
-        pnlSidebar.add(Box.createVerticalGlue()); // Gura odjavu na dno
+
+        pnlSidebar.add(Box.createVerticalGlue());
         pnlSidebar.add(createMenuButton("🚪  ODJAVI SE", e -> handleLogout()));
 
         // --- GLAVNI RADNI PANEL ---
         pnlContent = new JPanel(new BorderLayout());
         pnlContent.setBackground(contentBg);
 
-        // Gornji bar za naslov trenutne sekcije
+        // Gornji bar
         JPanel pnlTopBar = new JPanel(new BorderLayout());
         pnlTopBar.setBackground(Color.WHITE);
-        pnlTopBar.setPreferredSize(new Dimension(0, 60));
+        pnlTopBar.setPreferredSize(new Dimension(0, 65));
         pnlTopBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(229, 232, 232)));
 
-        JLabel lblSectionTitle = new JLabel("  Kontrolna Tabla");
-        lblSectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblSectionTitle = new JLabel("  Kontrolna Tabla");
+        lblSectionTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblSectionTitle.setForeground(sidebarColor);
         pnlTopBar.add(lblSectionTitle, BorderLayout.WEST);
 
-        // Sastavljanje
         JPanel pnlRightSide = new JPanel(new BorderLayout());
         pnlRightSide.add(pnlTopBar, BorderLayout.NORTH);
         pnlRightSide.add(pnlContent, BorderLayout.CENTER);
@@ -92,18 +105,31 @@ public class MainDashboard extends JFrame {
         mainPanel.add(pnlRightSide, BorderLayout.CENTER);
         add(mainPanel);
 
-        showWelcomeScreen();
+        // LOGIKA ZA STUDENTA: Ako nema referenta, znači da je student ulogovan
+        if (ReferentService.getCurrentUser() == null) {
+            setupStudentView();
+        } else {
+            showStatPanel();
+        }
+    }
+
+    private void setupStudentView() {
+        // Sakrij navigaciju jer student ne smije vidjeti tuđe podatke
+        pnlSidebar.setVisible(false);
+        lblSectionTitle.setText("  Moj Studentski Dosije");
+
+        // Napomena: LoginFrame će nakon ovoga pozvati dashboard.updateContent(new StudentReportPanel(...))
+        // tako da će se odmah prikazati karton tog studenta.
     }
 
     private JButton createMenuButton(String text, java.awt.event.ActionListener action) {
         JButton btn = new JButton(text);
-        btn.setMaximumSize(new Dimension(280, 50));
-        btn.setPreferredSize(new Dimension(280, 50));
+        btn.setMaximumSize(new Dimension(280, 55));
+        btn.setPreferredSize(new Dimension(280, 55));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         btn.setBackground(sidebarColor);
         btn.setForeground(textColor);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -125,30 +151,30 @@ public class MainDashboard extends JFrame {
         return btn;
     }
 
-    // --- FUNKCIJE ZA PRIKAZ PANELA ---
+    // --- NAVIGACIJA ---
 
-    private void showWelcomeScreen() {
-        updateContent(new JLabel("<html><center><h1>Dobrodošli nazad!</h1><p>Izaberite opciju iz menija za upravljanje bazom podataka.</p></center></html>", SwingConstants.CENTER));
+    public void showStatPanel() {
+        lblSectionTitle.setText("  Pregled Statistike");
+        updateContent(new StatPanel(studentService, courseService, enrollmentService));
     }
 
-    private void showStudentPanel() {
-        // Ovdje ćemo u sljedećem koraku staviti:
-        StudentTablePanel studentPanel = new StudentTablePanel(studentService);
-        updateContent(studentPanel);
+    public void showStudentPanel() {
+        lblSectionTitle.setText("  Upravljanje Studentima");
+        updateContent(new StudentTablePanel(studentService, enrollmentService));
     }
 
     private void showCoursePanel() {
-        CourseTablePanel coursePanel = new CourseTablePanel(courseService);
-        updateContent(coursePanel);
+        lblSectionTitle.setText("  Upravljanje Predmetima");
+        updateContent(new CourseTablePanel(courseService));
     }
+
     private void showEnrollmentPanel() {
-        updateContent(new EnrollmentPanel(studentService, courseService));
+        lblSectionTitle.setText("  Upis Ocjena");
+        updateContent(new EnrollmentPanel(studentService, courseService, enrollmentService));
     }
 
-
-
-    // Pomoćna metoda za zamjenu panela
-    private void updateContent(Component c) {
+    // Metoda za dinamičku zamjenu panela
+    public void updateContent(Component c) {
         pnlContent.removeAll();
         pnlContent.add(c, BorderLayout.CENTER);
         pnlContent.revalidate();
@@ -156,10 +182,12 @@ public class MainDashboard extends JFrame {
     }
 
     private void handleLogout() {
-        int confirm = JOptionPane.showConfirmDialog(this, "Da li ste sigurni da želite napustiti sistem?", "Odjava", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Da li želite da se odjavite?", "Odjava", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
+            referentService.logout(); // Očisti sesiju
             this.dispose();
-            // Ovdje bi se vratio na Login prozor
+            // Ovdje bi se idealno trebao vratiti LoginFrame,
+            // što možeš uraditi u tvojoj Main klasi.
         }
     }
 }
