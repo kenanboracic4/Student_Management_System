@@ -25,21 +25,21 @@ public class Main {
         StudentInterface studentRepo = new StudentRepository();
         CourseInterface courseRepo = new CourseRepository();
         EnrollmentInterface enrollmentRepo = new EnrollmentRepository();
-        ReferentInterface referentRepo = new ReferentRepository(); // NOVO
+        ReferentInterface referentRepo = new ReferentRepository();
 
         // 3. Instanciranje Servisa
         StudentService studentService = new StudentService(studentRepo);
         CourseService courseService = new CourseService(courseRepo);
 
-        // EnrollmentService sada ispravno prima interfejs umjesto konkretne klase
+
         EnrollmentService enrollmentService = new EnrollmentService(
                 (EnrollmentRepository) enrollmentRepo,
                 studentService,
                 courseService
         );
 
-        // Servis za referente koji upravlja prijavom i audit podacima
-        ReferentService referentService = new ReferentService(referentRepo); // NOVO
+
+        ReferentService referentService = new ReferentService(referentRepo);
 
         // 4. Pokretanje UI-a sa SVA ČETIRI potrebna servisa
         // Ovo rješava "actual and formal argument lists differ in length" grešku
