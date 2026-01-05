@@ -73,7 +73,6 @@ public class Enrollment {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Enrollment that = (Enrollment) o;
-        // Primarni ključ je kombinacija ova tri polja
         return Objects.equals(studentIndexNumber, that.studentIndexNumber) &&
                 Objects.equals(courseCode, that.courseCode) &&
                 Objects.equals(academicYear, that.academicYear);
