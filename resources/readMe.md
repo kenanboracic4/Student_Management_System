@@ -7,14 +7,14 @@
 
 ---
 
-## 📄 O Projektu
+## O Projektu
 "Studentska Služba" je softversko rješenje dizajnirano da automatizuje i digitalizuje ključne administrativne procese na visokoškolskoj ustanovi. Aplikacija omogućava potpunu evidenciju studenata, nastavnog plana (predmeta), te upravljanje akademskim procesima poput upisa semestra i ocjenjivanja.
 
 Sistem je implementiran u programskom jeziku **Java**, koristeći **Swing** biblioteku za grafički interfejs. Poseban akcenat tokom razvoja stavljen je na robusnu arhitekturu, odvajanje poslovne logike od prezentacionog sloja i konzistentnost podataka.
 
 ---
 
-## 🏗️ Arhitektura i Struktura Projekta
+## Arhitektura i Struktura Projekta
 Projekat je organizovan prema **višeslojnoj arhitekturi (N-Tier)**, gdje svaki paket ima jasno definisanu odgovornost. Ovakva struktura osigurava modularnost i olakšava buduće nadogradnje.
 
 ### Struktura paketa:
