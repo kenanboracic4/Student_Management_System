@@ -9,11 +9,21 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * Panel za prikaz globalne statistike sistema.
+ * Vizuelno prikazuje broj studenata, broj predmeta i prosječnu ocjenu na nivou cijele institucije.
+ */
 public class StatPanel extends JPanel {
     private final StudentService studentService;
     private final CourseService courseService;
-    private final EnrollmentService enrollmentService; // DODANO
+    private final EnrollmentService enrollmentService;
 
+    /**
+     * Konstruktor panela.
+     * @param studentService Servis za podatke o studentima.
+     * @param courseService Servis za podatke o predmetima.
+     * @param enrollmentService Servis za podatke o upisima i ocjenama.
+     */
     public StatPanel(StudentService studentService, CourseService courseService, EnrollmentService enrollmentService) {
         this.studentService = studentService;
         this.courseService = courseService;
@@ -21,34 +31,40 @@ public class StatPanel extends JPanel {
 
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
+        // Postavljanje prostranih margina za moderan izgled
         setBorder(new EmptyBorder(40, 50, 40, 50));
 
         initUI();
     }
 
+    /**
+     * Inicijalizuje i iscrtava UI komponente.
+     * Poziva se pri kreiranju i može se koristiti za osvježavanje prikaza.
+     */
     private void initUI() {
-        // Čišćenje panela prije iscrtavanja (za refresh)
         removeAll();
 
+        // --- NASLOV ---
         JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT));
         header.setBackground(Color.WHITE);
         JLabel title = new JLabel("Statistika Sistema");
         title.setFont(new Font("Segoe UI", Font.BOLD, 32));
         header.add(title);
 
+        // --- MREŽA SA KARTICAMA ---
+        // GridLayout sa jednim redom i tri kolone za simetričan prikaz
         JPanel cardsGrid = new JPanel(new GridLayout(1, 3, 25, 0));
         cardsGrid.setBackground(Color.WHITE);
 
-        // 1. UKUPNO STUDENATA
+        // Prikupljanje podataka putem servisa
         int totalStudents = studentService.getAllStudents().size();
-
-        // 2. AKTIVNIH PREDMETA
         int totalCourses = courseService.getAllCourses().size();
 
-        // 3. IZRAČUN PROSJEČNE OCJENE IZ BAZE
+        // Izračun prosječne ocjene svih položenih ispita
         double averageGrade = calculateSystemAverage();
         String avgDisplay = (averageGrade == 0) ? "0.00" : String.format("%.2f", averageGrade);
 
+        // Dodavanje kartica sa specifičnim akcentnim bojama (Plava, Zelena, Ljubičasta)
         cardsGrid.add(createStatCard("UKUPNO STUDENATA", String.valueOf(totalStudents), new Color(37, 99, 235)));
         cardsGrid.add(createStatCard("AKTIVNIH PREDMETA", String.valueOf(totalCourses), new Color(22, 163, 74)));
         cardsGrid.add(createStatCard("PROSJEČNA OCJENA", avgDisplay, new Color(147, 51, 234)));
@@ -60,6 +76,11 @@ public class StatPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Izračunava prosječnu ocjenu svih studenata u sistemu.
+     * Uzimaju se u obzir samo prolazne ocjene (6-10).
+     * @return Prosječna vrijednost ili 0.0 ako nema ocjena.
+     */
     private double calculateSystemAverage() {
         List<Enrollment> allEnrollments = enrollmentService.getAllEnrollments();
         if (allEnrollments == null || allEnrollments.isEmpty()) return 0.0;
@@ -68,7 +89,7 @@ public class StatPanel extends JPanel {
         int count = 0;
 
         for (Enrollment e : allEnrollments) {
-            // Računamo samo ako ocjena postoji i ako je prolazna (>= 6) ili po tvojoj logici (>=5)
+            // Logika: Računaj samo ako je student položio ispit
             if (e.getGrade() != null && e.getGrade() >= 6) {
                 sum += e.getGrade();
                 count++;
@@ -78,6 +99,10 @@ public class StatPanel extends JPanel {
         return (count > 0) ? sum / count : 0.0;
     }
 
+    /**
+     * Fabrička metoda za kreiranje uniformnih statističkih kartica.
+     * Koristi BoxLayout za vertikalno poravnanje naslova i vrijednosti.
+     */
     private JPanel createStatCard(String title, String val, Color accent) {
         JPanel card = new JPanel();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -96,7 +121,7 @@ public class StatPanel extends JPanel {
         lblVal.setForeground(accent);
 
         card.add(lblTitle);
-        card.add(Box.createVerticalStrut(10));
+        card.add(Box.createVerticalStrut(10)); // Razmak između naslova i broja
         card.add(lblVal);
 
         return card;
