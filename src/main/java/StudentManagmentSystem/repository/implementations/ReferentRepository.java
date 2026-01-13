@@ -8,8 +8,19 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * SQL implementacija {@link ReferentInterface} interfejsa.
+ * Klasa omogućava upravljanje nalozima referenata i vrši autentifikaciju korisnika
+ * direktno nad tabelom {@code Referent} u bazi podataka.
+ */
 public class ReferentRepository implements ReferentInterface {
 
+    /**
+     * Registruje novog referenta u bazu podataka.
+     * Snima osnovne podatke i lozinku u plain-text formatu.
+     * * @param referent Objekat koji sadrži podatke za novi nalog.
+     * @throws RuntimeException Ukoliko dođe do greške pri radu sa bazom.
+     */
     @Override
     public void addReferent(Referent referent) {
         String sql = "INSERT INTO Referent (sifraReferenta, password, ime, prezime) VALUES (?, ?, ?, ?)";
@@ -27,6 +38,11 @@ public class ReferentRepository implements ReferentInterface {
         }
     }
 
+    /**
+     * Ažurira postojeće podatke referenta na osnovu primarnog ključa {@code sifraReferenta}.
+     * * @param referent Objekat sa novim podacima (ime, prezime, lozinka).
+     * @return {@code true} ako je nalog uspješno ažuriran.
+     */
     @Override
     public boolean updateReferent(Referent referent) {
         String sql = "UPDATE Referent SET password = ?, ime = ?, prezime = ? WHERE sifraReferenta = ?";
@@ -44,6 +60,11 @@ public class ReferentRepository implements ReferentInterface {
         }
     }
 
+    /**
+     * Briše nalog referenta iz baze podataka.
+     * * @param referentId Jedinstveni identifikator referenta.
+     * @return {@code true} ako je brisanje uspješno izvršeno.
+     */
     @Override
     public boolean deleteReferent(String referentId) {
         String sql = "DELETE FROM Referent WHERE sifraReferenta = ?";
@@ -57,6 +78,11 @@ public class ReferentRepository implements ReferentInterface {
         }
     }
 
+    /**
+     * Pronalazi referenta prema njegovom identifikatoru.
+     * * @param referentId Šifra referenta koja se pretražuje.
+     * @return {@link Optional} sa referentom ili {@link Optional#empty()} ako nije pronađen.
+     */
     @Override
     public Optional<Referent> getReferentById(String referentId) {
         String sql = "SELECT * FROM Referent WHERE sifraReferenta = ?";
@@ -75,6 +101,10 @@ public class ReferentRepository implements ReferentInterface {
         return Optional.empty();
     }
 
+    /**
+     * Vraća listu svih referenata u sistemu.
+     * * @return {@link ArrayList} sa svim registrovanim referentima.
+     */
     @Override
     public ArrayList<Referent> getAllReferents() {
         String sql = "SELECT * FROM Referent";
@@ -92,6 +122,13 @@ public class ReferentRepository implements ReferentInterface {
         return referents;
     }
 
+    /**
+     * Provjerava ispravnost korisničkog imena i lozinke.
+     * Metoda se poziva prilikom prijave na sistem.
+     * * @param referentId Korisničko ime (šifra) referenta.
+     * @param password Lozinka.
+     * @return {@link Optional} sa objektom {@link Referent} ukoliko su podaci tačni.
+     */
     @Override
     public Optional<Referent> login(String referentId, String password) {
         String sql = "SELECT * FROM Referent WHERE sifraReferenta = ? AND password = ?";
@@ -112,7 +149,12 @@ public class ReferentRepository implements ReferentInterface {
         return Optional.empty();
     }
 
-    // Pomoćna metoda za mapiranje rezultata iz baze u objekt
+    /**
+     * Pomoćna metoda koja mapira podatke iz baze (ResultSet) u Java objekat {@link Referent}.
+     * * @param rs ResultSet pozicioniran na željeni red.
+     * @return Popunjen objekat tipa {@link Referent}.
+     * @throws SQLException Ukoliko kolone u bazi ne odgovaraju očekivanim nazivima.
+     */
     private Referent mapRowToReferent(ResultSet rs) throws SQLException {
         return new Referent(
                 rs.getString("sifraReferenta"),

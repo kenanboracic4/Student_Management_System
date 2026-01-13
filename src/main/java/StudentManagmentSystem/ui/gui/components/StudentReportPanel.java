@@ -1,7 +1,5 @@
 package StudentManagmentSystem.ui.gui.components;
 
-
-
 import StudentManagmentSystem.models.Enrollment;
 import StudentManagmentSystem.models.StudentReport;
 import StudentManagmentSystem.services.EnrollmentService;
@@ -14,10 +12,20 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
+/**
+ * Panel za prikaz akademskog kartona (izvještaja) studenta.
+ * Vizuelno prikazuje lične podatke, ključne statistike (prosjek i bodovi)
+ * te tabelarni pregled svih položenih ispita.
+ */
 public class StudentReportPanel extends JPanel {
     private final EnrollmentService enrollmentService;
     private final String studentIndex;
 
+    /**
+     * Konstruktor panela za izvještaj.
+     * @param enrollmentService Servis koji generiše podatke za izvještaj.
+     * @param studentIndex Broj indeksa studenta čiji se podaci prikazuju.
+     */
     public StudentReportPanel(EnrollmentService enrollmentService, String studentIndex) {
         this.enrollmentService = enrollmentService;
         this.studentIndex = studentIndex;
@@ -29,11 +37,16 @@ public class StudentReportPanel extends JPanel {
         renderReport();
     }
 
+    /**
+     * Glavna metoda za generisanje i iscrtavanje UI elemenata na osnovu podataka iz baze.
+     * Uključuje logiku za uslovno sakrivanje navigacije zavisno od uloge korisnika.
+     */
     private void renderReport() {
         try {
+            // Generisanje modela podataka izvještaja preko servisa
             StudentReport report = enrollmentService.generateStudentReport(studentIndex);
 
-            // --- GORNJI DIO: Dugme Nazad ---
+            // --- NAVIGACIJA ---
             JPanel pnlTopNavigation = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlTopNavigation.setOpaque(false);
 
@@ -41,21 +54,22 @@ public class StudentReportPanel extends JPanel {
             SwingUtil.styleButton(btnBack, Color.WHITE, SwingUtil.COLOR_TEXT);
             btnBack.addActionListener(e -> MainDashboard.getInstance().showStudentPanel());
 
-            // --- KLJUČNA PROVJERA ---
-            // Ako je referent null, znači da je ulogovan student.
-            // U tom slučaju sakrivamo dugme "NAZAD" da student ne može pristupiti listi svih studenata.
+            /* * SIGURNOSNA PROVJERA:
+             * Ako u sesiji nema referenta, znači da je ulogovan student.
+             * Studentu se onemogućava povratak na listu svih studenata radi zaštite privatnosti.
+             */
             if (StudentManagmentSystem.services.ReferentService.getCurrentUser() == null) {
                 btnBack.setVisible(false);
             }
 
             pnlTopNavigation.add(btnBack);
 
-            // --- HEADER: Lični podaci i Kartice ---
+            // --- HEADER: Ime studenta i statističke kartice ---
             JPanel pnlHeader = new JPanel(new BorderLayout());
             pnlHeader.setOpaque(false);
             pnlHeader.setBorder(new EmptyBorder(20, 0, 30, 0));
 
-            // Tekstualni podaci
+            // Informacije o studentu
             JPanel pnlInfoText = new JPanel(new GridLayout(2, 1, 0, 5));
             pnlInfoText.setOpaque(false);
 
@@ -63,14 +77,15 @@ public class StudentReportPanel extends JPanel {
             lblName.setFont(new Font("Segoe UI", Font.BOLD, 32));
             lblName.setForeground(SwingUtil.COLOR_TEXT);
 
-            JLabel lblSubInfo = new JLabel("Indeks: " + report.getStudent().getIndexNumber() + "  •  Program: " + report.getStudent().getStudyProgram());
+            JLabel lblSubInfo = new JLabel("Indeks: " + report.getStudent().getIndexNumber() +
+                    "  •  Program: " + report.getStudent().getStudyProgram());
             lblSubInfo.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             lblSubInfo.setForeground(new Color(100, 116, 139));
 
             pnlInfoText.add(lblName);
             pnlInfoText.add(lblSubInfo);
 
-            // Kartice sa statistikom (ECTS i Prosjek)
+            // Vizuelne kartice za statistiku
             JPanel pnlStats = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
             pnlStats.setOpaque(false);
             pnlStats.add(createMiniStatCard("UKUPNO ECTS", String.valueOf(report.getTotalEcts()), new Color(37, 99, 235)));
@@ -79,12 +94,13 @@ public class StudentReportPanel extends JPanel {
             pnlHeader.add(pnlInfoText, BorderLayout.WEST);
             pnlHeader.add(pnlStats, BorderLayout.EAST);
 
-            // --- TABELA: Položeni ispiti ---
+            // --- TABELA POLOŽENIH ISPITA ---
             String[] columns = {"ŠIFRA PREDMETA", "OCJENA", "DATUM POLAGANJA", "AKAD. GODINA", "REFERENT"};
             DefaultTableModel model = new DefaultTableModel(columns, 0) {
                 @Override public boolean isCellEditable(int r, int c) { return false; }
             };
 
+            // Prikazujemo samo predmete sa prolaznom ocjenom (>= 6)
             for (Enrollment e : report.getEnrollments()) {
                 if (e.getGrade() != null && e.getGrade() >= 6) {
                     model.addRow(new Object[]{
@@ -104,7 +120,7 @@ public class StudentReportPanel extends JPanel {
             sp.setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240), 1));
             sp.getViewport().setBackground(Color.WHITE);
 
-            // Sastavljanje svega u glavni panel
+            // Sastavljanje layouta
             JPanel pnlNorthContainer = new JPanel(new BorderLayout());
             pnlNorthContainer.setOpaque(false);
             pnlNorthContainer.add(pnlTopNavigation, BorderLayout.NORTH);
@@ -118,6 +134,12 @@ public class StudentReportPanel extends JPanel {
         }
     }
 
+    /**
+     * Kreira malu stilizovanu karticu za prikaz numeričkih podataka.
+     * @param label Naslov kartice (npr. PROSJEK).
+     * @param value Vrijednost podatka.
+     * @param accent Boja teksta vrijednosti.
+     */
     private JPanel createMiniStatCard(String label, String value, Color accent) {
         JPanel card = new JPanel(new GridLayout(2, 1, 0, 2));
         card.setBackground(Color.WHITE);
@@ -139,6 +161,9 @@ public class StudentReportPanel extends JPanel {
         return card;
     }
 
+    /**
+     * Primjenjuje vizuelni stil na tabelu sa ispitima.
+     */
     private void styleReportTable(JTable table) {
         table.setRowHeight(45);
         table.setShowGrid(false);
@@ -149,7 +174,7 @@ public class StudentReportPanel extends JPanel {
 
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer); // Centriraj ocjenu
+        table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
     }
 
     private void showError(String msg) {

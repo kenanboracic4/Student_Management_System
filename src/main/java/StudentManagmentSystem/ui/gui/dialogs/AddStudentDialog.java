@@ -7,6 +7,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * Dijaloški prozor za registraciju novog studenta u sistem.
+ * Omogućava unos ličnih podataka, akademskih informacija i pristupnih parametara (lozinka).
+ */
 public class AddStudentDialog extends JDialog {
     private final StudentService studentService;
     private boolean studentAdded = false;
@@ -19,17 +23,18 @@ public class AddStudentDialog extends JDialog {
     private final Color COLOR_BORDER = new Color(226, 232, 240);
 
     public AddStudentDialog(Frame parent, StudentService studentService) {
-        super(parent, "Novi Student", true);
+        super(parent, "Novi Student", true); // Modalni prozor
         this.studentService = studentService;
         initUI();
     }
 
     private void initUI() {
-        setSize(480, 680); // Malo veći prozor za bolji pregled
+        setSize(480, 680);
         setLocationRelativeTo(getOwner());
         getContentPane().setBackground(COLOR_BG);
         setLayout(new BorderLayout());
 
+        // --- HEADER ---
         JPanel pnlHeader = new JPanel(new GridLayout(2, 1));
         pnlHeader.setBackground(COLOR_BG);
         pnlHeader.setBorder(new EmptyBorder(30, 45, 15, 45));
@@ -45,6 +50,7 @@ public class AddStudentDialog extends JDialog {
         pnlHeader.add(lblTitle);
         pnlHeader.add(lblSub);
 
+        // --- FORMA ---
         JPanel pnlForm = new JPanel();
         pnlForm.setLayout(new BoxLayout(pnlForm, BoxLayout.Y_AXIS));
         pnlForm.setBackground(COLOR_BG);
@@ -57,6 +63,7 @@ public class AddStudentDialog extends JDialog {
         txtProgram = createModernInput("STUDIJSKI PROGRAM", pnlForm);
         txtYear = createModernInput("GODINA UPISA", pnlForm);
 
+        // --- AKCIJE ---
         JPanel pnlActions = new JPanel(new GridLayout(1, 2, 15, 0));
         pnlActions.setBackground(COLOR_BG);
         pnlActions.setBorder(new EmptyBorder(20, 45, 40, 45));
@@ -107,6 +114,9 @@ public class AddStudentDialog extends JDialog {
         else btn.setBorderPainted(false);
     }
 
+    /**
+     * Prikuplja podatke iz polja, vrši validaciju i prosljeđuje ih StudentService-u.
+     */
     private void handleSave() {
         try {
             String index = txtIndex.getText().trim();
@@ -116,13 +126,16 @@ public class AddStudentDialog extends JDialog {
             String prog = txtProgram.getText().trim();
             String yearStr = txtYear.getText().trim();
 
+            // Osnovna validacija obaveznih polja
             if (index.isEmpty() || pass.isEmpty() || name.isEmpty() || surname.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Sva polja su obavezna!", "Greška", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             int year = Integer.parseInt(yearStr);
-            String refId = (ReferentService.getCurrentUser() != null) ? ReferentService.getCurrentUser().getReferentId() : "SISTEM";
+            String refId = (ReferentService.getCurrentUser() != null)
+                    ? ReferentService.getCurrentUser().getReferentId()
+                    : "SISTEM";
 
             Student s = new Student(index, pass, name, surname, prog, year, refId);
 

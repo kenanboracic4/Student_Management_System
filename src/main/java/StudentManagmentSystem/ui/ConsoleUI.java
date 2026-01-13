@@ -6,13 +6,25 @@ import StudentManagmentSystem.services.*;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Konzolaški korisnički interfejs (Console UI) aplikacije.
+ * Ova klasa upravlja interakcijom sa korisnikom putem standardnog ulaza i izlaza.
+ * Implementira menije za referente i studente, te delegira sve zahtjeve odgovarajućim servisima.
+ */
 public class ConsoleUI {
     private final StudentService studentService;
     private final CourseService courseService;
     private final EnrollmentService enrollmentService;
-    private final ReferentService referentService; // NOVO
+    private final ReferentService referentService;
     private final Scanner scanner;
 
+    /**
+     * Konstruktor koji inicijalizuje interfejs sa svim potrebnim servisima (Dependency Injection).
+     * * @param studentService Servis za rad sa studentima.
+     * @param courseService Servis za rad sa predmetima.
+     * @param enrollmentService Servis za upravljanje upisima i ocjenama.
+     * @param referentService Servis za autentifikaciju i sesije.
+     */
     public ConsoleUI(StudentService studentService, CourseService courseService,
                      EnrollmentService enrollmentService, ReferentService referentService) {
         this.studentService = studentService;
@@ -22,6 +34,10 @@ public class ConsoleUI {
         this.scanner = new Scanner(System.in);
     }
 
+    /**
+     * Glavna petlja aplikacije koja prikazuje početni meni.
+     * Omogućava izbor između prijave referenta, registracije ili pregleda za studente.
+     */
     public void start() {
         boolean exit = false;
         while (!exit) {
@@ -47,6 +63,10 @@ public class ConsoleUI {
 
     // --- AUTENTIFIKACIJA ---
 
+    /**
+     * Upravlja procesom prijave referenta.
+     * U slučaju uspjeha, otvara radni panel za referente.
+     */
     private void handleReferentLogin() {
         System.out.print("ID Referenta: ");
         String id = scanner.nextLine();
@@ -61,6 +81,9 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Prikuplja podatke za registraciju novog operatera (referenta) u sistemu.
+     */
     private void handleReferentRegistration() {
         System.out.print("Željeni ID: ");
         String id = scanner.nextLine();
@@ -79,6 +102,9 @@ public class ConsoleUI {
         }
     }
 
+    /**
+     * Omogućava studentima uvid u njihov akademski karton bez prava izmjene podataka.
+     */
     private void handleStudentLogin() {
         System.out.print("Unesite broj indeksa: ");
         String index = scanner.nextLine();
@@ -96,6 +122,10 @@ public class ConsoleUI {
 
     // --- MENIJI ---
 
+    /**
+     * Prikazuje operativni meni za ulogovanog referenta.
+     * Referenti ovdje vrše administraciju studenata, predmeta i ocjena.
+     */
     private void showReferentMenu() {
         boolean back = false;
         while (!back) {
@@ -133,6 +163,9 @@ public class ConsoleUI {
 
     // --- POMOĆNE METODE ZA RAD ---
 
+    /**
+     * Prikuplja ulazne podatke za kreiranje novog studenta i poziva servis.
+     */
     private void handleAddStudent() {
         System.out.print("Broj indeksa: "); String index = scanner.nextLine();
         System.out.print("Lozinka za studenta: "); String pass = scanner.nextLine();
@@ -141,12 +174,14 @@ public class ConsoleUI {
         System.out.print("Program: "); String prog = scanner.nextLine();
         System.out.print("Godina upisa: "); int year = Integer.parseInt(scanner.nextLine());
 
-        // Proslijeđujemo ID ulogovanog referenta
         Student s = new Student(index, pass, fName, lName, prog, year, ReferentService.getCurrentUser().getReferentId());
         studentService.addStudent(s);
         System.out.println("Sistem: Student registrovan.");
     }
 
+    /**
+     * Prikuplja ulazne podatke za kreiranje novog predmeta.
+     */
     private void handleAddCourse() {
         System.out.print("Šifra: "); String code = scanner.nextLine();
         System.out.print("Naziv: "); String name = scanner.nextLine();
@@ -158,6 +193,9 @@ public class ConsoleUI {
         System.out.println("Sistem: Predmet dodan.");
     }
 
+    /**
+     * Procesuira upis studenta na predmet.
+     */
     private void handleEnrollment() {
         System.out.print("Indeks: "); String idx = scanner.nextLine();
         System.out.print("Šifra predmeta: "); String code = scanner.nextLine();
@@ -168,6 +206,9 @@ public class ConsoleUI {
         System.out.println("Sistem: Student upisan na predmet.");
     }
 
+    /**
+     * Procesuira unos ili korekciju ocjene.
+     */
     private void handleGrading() {
         System.out.print("Indeks: "); String idx = scanner.nextLine();
         System.out.print("Šifra predmeta: "); String code = scanner.nextLine();
@@ -179,11 +220,18 @@ public class ConsoleUI {
         System.out.println("Sistem: Ocjena procesuirana.");
     }
 
+    /**
+     * Generiše i ispisuje detaljan izvještaj o položenim ispitima, ECTS bodovima i prosjeku.
+     * @param index Broj indeksa studenta.
+     */
     private void handleStudentReport(String index) {
         var report = enrollmentService.generateStudentReport(index);
         System.out.println(report.toString());
     }
 
+    /**
+     * Vrši pretragu studenata po prezimenu i ispisuje rezultate.
+     */
     private void handleSearchStudents() {
         System.out.print("Početak prezimena: ");
         String prefix = scanner.nextLine();
