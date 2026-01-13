@@ -5,10 +5,22 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+/**
+ * Infrastrukturna klasa zadužena za upravljanje konekcijom sa SQLite bazom podataka.
+ * Klasa implementira Singleton-like pristup dobavljanju konekcije i
+ * sadrži logiku za inicijalno kreiranje šeme baze podataka (DDL skripte).
+ */
 public class DbConnection {
 
+    /** Putanja do SQLite fajla baze podataka unutar resursa projekta. */
     private static final String JDBC_URL = "jdbc:sqlite:resources/database.db";
 
+    /**
+     * Uspostavlja konekciju sa bazom podataka.
+     * Prije uspostavljanja konekcije, provjerava dostupnost SQLite JDBC drajvera.
+     * * @return {@link Connection} objekat spreman za SQL operacije.
+     * @throws SQLException Ukoliko drajver nije pronađen ili konekcija ne uspije.
+     */
     public static Connection getConnection() throws SQLException {
         try {
             Class.forName("org.sqlite.JDBC");
@@ -18,16 +30,25 @@ public class DbConnection {
         return DriverManager.getConnection(JDBC_URL);
     }
 
+    /**
+     * Inicijalizuje bazu podataka kreiranjem svih potrebnih tabela ukoliko one ne postoje.
+     * Tabele su strukturirane tako da podržavaju audit trail (trag o izmjenama) i
+     * referencijalni integritet putem stranih ključeva.
+     * * Redoslijed kreiranja:
+     * 1. Referent (nema zavisnosti)
+     * 2. Student & Predmet (zavise od Referenta)
+     * 3. Upis (zavisi od Studenta, Predmeta i Referenta)
+     */
     public static void initializeDatabase() {
-        // 1. REFERENT - Osnova za sve ostale tabele (zbog stranih ključeva)
+        // SQL za tabelu Referent - osnova sistema autentifikacije
         String sqlReferent = "CREATE TABLE IF NOT EXISTS Referent (" +
                 "sifraReferenta TEXT PRIMARY KEY NOT NULL, " +
-                "password TEXT NOT NULL, " + // Mora biti NOT NULL za login
+                "password TEXT NOT NULL, " +
                 "ime TEXT NOT NULL, " +
                 "prezime TEXT NOT NULL, " +
                 "datumKreiranja TEXT DEFAULT (datetime('now','localtime')));";
 
-        // 2. STUDENT - Sadrži sifru i audit polja
+        // SQL za tabelu Student - uključuje audit polja i vezu sa referentom
         String sqlStudent = "CREATE TABLE IF NOT EXISTS Student (" +
                 "brojIndeksa TEXT PRIMARY KEY NOT NULL, " +
                 "sifra TEXT NOT NULL, " +
@@ -40,7 +61,7 @@ public class DbConnection {
                 "referentKojiJeDodao TEXT, " +
                 "FOREIGN KEY (referentKojiJeDodao) REFERENCES Referent(sifraReferenta));";
 
-        // 3. PREDMET - Sadrži referenta koji ga je kreirao
+        // SQL za tabelu Predmet - sadrži ECTS bodove i semestar
         String sqlPredmet = "CREATE TABLE IF NOT EXISTS Predmet (" +
                 "sifraPredmeta TEXT PRIMARY KEY NOT NULL, " +
                 "naziv TEXT NOT NULL, " +
@@ -51,7 +72,7 @@ public class DbConnection {
                 "datumAzuriranja TEXT, " +
                 "FOREIGN KEY (referentId) REFERENCES Referent(sifraReferenta));";
 
-        // 4. UPIS - Kompozitni ključ i audit polja
+        // SQL za tabelu Upis - veza N:M između Studenta i Predmeta sa dodatnim atributima (ocjena)
         String sqlUpis = "CREATE TABLE IF NOT EXISTS Upis (" +
                 "brojIndeksa TEXT NOT NULL, " +
                 "sifraPredmeta TEXT NOT NULL, " +
@@ -71,16 +92,15 @@ public class DbConnection {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Omogućavanje stranih ključeva u SQLite-u
+            // Eksplicitno omogućavanje provjere stranih ključeva (SQLite specifičnost)
             stmt.execute("PRAGMA foreign_keys = ON;");
 
-            // Izvršavanje upita redom
             stmt.execute(sqlReferent);
             stmt.execute(sqlStudent);
             stmt.execute(sqlPredmet);
             stmt.execute(sqlUpis);
 
-            System.out.println("Baza podataka je uspješno kreirana sa svim kolonama.");
+            System.out.println("Sistem: Baza podataka je uspješno inicijalizovana.");
 
         } catch (SQLException e) {
             System.err.println("GREŠKA pri inicijalizaciji: " + e.getMessage());

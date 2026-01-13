@@ -8,9 +8,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * SQL implementacija {@link EnrollmentInterface} interfejsa.
+ * Upravlja perzistencijom podataka o upisima studenata na predmete.
+ * Ova klasa koristi tabelu {@code Upis} i podržava praćenje referenata koji su kreirali ili izmijenili zapis.
+ */
 public class EnrollmentRepository implements EnrollmentInterface {
 
-    // Ažurirana pomoćna metoda za mapiranje reda (uključuje referente)
+    /**
+     * Pomoćna metoda za transformaciju reda iz baze podataka u objekat {@link Enrollment}.
+     * Posebno rukuje opcionim poljima kao što su ocjena i metapodaci o izmjenama.
+     *
+     * @param rs ResultSet pozicioniran na trenutni red.
+     * @return {@link Enrollment} objekat sa podacima iz baze.
+     * @throws SQLException Ukoliko kolone nisu dostupne ili dođe do greške u konekciji.
+     */
     private Enrollment mapRow(ResultSet rs) throws SQLException {
         return new Enrollment(
                 rs.getString("brojIndeksa"),
@@ -20,14 +32,21 @@ public class EnrollmentRepository implements EnrollmentInterface {
                 rs.getString("datumOcjene"),
                 rs.getString("razlogIzmjeneOcjene"),
                 rs.getString("datumIzmjene"),
-                rs.getString("referentKojiJeDodao"),    // NOVO
-                rs.getString("referentKojiJeIzmijenio") // NOVO
+                rs.getString("referentKojiJeDodao"),
+                rs.getString("referentKojiJeIzmijenio")
         );
     }
 
+    /**
+     * Snima novi upis u bazu podataka.
+     * Postavlja {@code referentKojiJeDodao} kako bi se osigurao audit trail (trag o kreiranju).
+     *
+     * @param enrollment Objekat koji sadrži podatke o upisu.
+     * @return Spašeni {@link Enrollment} objekat.
+     * @throws RuntimeException Ukoliko upis ne uspije zbog SQL ograničenja ili greške.
+     */
     @Override
     public Enrollment create(Enrollment enrollment) {
-        // Dodata kolona referentKojiJeDodao
         String sql = "INSERT INTO Upis (brojIndeksa, sifraPredmeta, akademskaGodina, ocjena, datumOcjene, " +
                 "razlogIzmjeneOcjene, datumIzmjene, referentKojiJeDodao) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -48,7 +67,7 @@ public class EnrollmentRepository implements EnrollmentInterface {
             stmt.setString(5, enrollment.getGradeDate());
             stmt.setString(6, enrollment.getChangeReason());
             stmt.setString(7, enrollment.getChangeDate());
-            stmt.setString(8, enrollment.getAddedByReferentId()); // NOVO
+            stmt.setString(8, enrollment.getAddedByReferentId());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
@@ -61,9 +80,16 @@ public class EnrollmentRepository implements EnrollmentInterface {
         }
     }
 
+    /**
+     * Ažurira postojeći upis u bazi.
+     * Ova metoda se najčešće koristi za unos ocjene nakon ispita ili naknadnu korekciju podataka.
+     * Obavezno snima ID referenta koji vrši izmjenu.
+     *
+     * @param enrollment Objekat sa novim podacima.
+     * @return {@code true} ako je bar jedan red u bazi ažuriran.
+     */
     @Override
     public boolean update(Enrollment enrollment) {
-        // Ažurirano da uključuje i referenta koji je izvršio izmjenu
         String sql = "UPDATE Upis SET ocjena = ?, datumOcjene = ?, razlogIzmjeneOcjene = ?, " +
                 "datumIzmjene = ?, referentKojiJeIzmijenio = ? " +
                 "WHERE brojIndeksa = ? AND sifraPredmeta = ? AND akademskaGodina = ?";
@@ -80,9 +106,8 @@ public class EnrollmentRepository implements EnrollmentInterface {
             stmt.setString(2, enrollment.getGradeDate());
             stmt.setString(3, enrollment.getChangeReason());
             stmt.setString(4, enrollment.getChangeDate());
-            stmt.setString(5, enrollment.getModifiedByReferentId()); // NOVO
+            stmt.setString(5, enrollment.getModifiedByReferentId());
 
-            // Primarni ključ za WHERE klauzulu
             stmt.setString(6, enrollment.getStudentIndexNumber());
             stmt.setString(7, enrollment.getCourseCode());
             stmt.setString(8, enrollment.getAcademicYear());
@@ -94,6 +119,14 @@ public class EnrollmentRepository implements EnrollmentInterface {
         }
     }
 
+    /**
+     * Pronalazi jedinstven zapis o upisu koristeći kompozitni ključ.
+     *
+     * @param studentIndexNumber Indeks studenta.
+     * @param courseCode Šifra predmeta.
+     * @param academicYear Akademska godina.
+     * @return {@link Optional} sa pronađenim upisom.
+     */
     @Override
     public Optional<Enrollment> findByPrimaryKey(String studentIndexNumber, String courseCode, String academicYear) {
         String sql = "SELECT * FROM Upis WHERE brojIndeksa = ? AND sifraPredmeta = ? AND akademskaGodina = ?";
@@ -115,6 +148,13 @@ public class EnrollmentRepository implements EnrollmentInterface {
         return Optional.empty();
     }
 
+    /**
+     * Vraća listu upisa za određenog studenta u specifičnoj godini.
+     *
+     * @param studentIndexNumber Indeks studenta.
+     * @param academicYear Akademska godina.
+     * @return Lista upisa (npr. svi predmeti koje je student slušao 2023/24).
+     */
     @Override
     public List<Enrollment> findByStudentAndYear(String studentIndexNumber, String academicYear) {
         List<Enrollment> enrollments = new ArrayList<>();
@@ -136,6 +176,11 @@ public class EnrollmentRepository implements EnrollmentInterface {
         return enrollments;
     }
 
+    /**
+     * Briše zapis o upisu na osnovu primarnog ključa.
+     *
+     * @return {@code true} ako je brisanje uspješno.
+     */
     @Override
     public boolean delete(String studentIndexNumber, String courseCode, String academicYear) {
         String sql = "DELETE FROM Upis WHERE brojIndeksa = ? AND sifraPredmeta = ? AND akademskaGodina = ?";
@@ -152,6 +197,11 @@ public class EnrollmentRepository implements EnrollmentInterface {
         }
     }
 
+    /**
+     * Vraća sve upise u bazi podataka bez filtriranja.
+     *
+     * @return Lista svih {@link Enrollment} objekata.
+     */
     @Override
     public List<Enrollment> findAll() {
         String sql = "SELECT * FROM Upis";

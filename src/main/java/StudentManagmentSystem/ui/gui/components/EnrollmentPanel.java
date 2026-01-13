@@ -9,8 +9,12 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.util.List;
 
+/**
+ * Panel za upravljanje upisima studenata na predmete i procesom ocjenjivanja.
+ * Objedinjuje rad StudentService, CourseService i EnrollmentService kako bi
+ * referentima omogućio brz upis i uvid u rezultate ispita.
+ */
 public class EnrollmentPanel extends JPanel {
     private final StudentService studentService;
     private final CourseService courseService;
@@ -20,14 +24,17 @@ public class EnrollmentPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
 
-    // --- BRUTALNA PALETA BOJA ---
-    private final Color COLOR_BG = new Color(248, 250, 252); // Soft gray
+    // --- MODERNA PALETA BOJA ---
+    private final Color COLOR_BG = new Color(248, 250, 252);
     private final Color COLOR_CARD = Color.WHITE;
-    private final Color COLOR_ACCENT = new Color(79, 70, 229); // Modern Indigo
+    private final Color COLOR_ACCENT = new Color(79, 70, 229); // Indigo
     private final Color COLOR_TEXT_MAIN = new Color(15, 23, 42);
     private final Color COLOR_TEXT_SUB = new Color(100, 116, 139);
-    private final Color COLOR_SELECTION = new Color(51, 65, 85); // Tamna boja na klik
+    private final Color COLOR_SELECTION = new Color(51, 65, 85);
 
+    /**
+     * Konstruktor panela koji inicijalizuje sve slojeve i komponente.
+     */
     public EnrollmentPanel(StudentService ss, CourseService cs, EnrollmentService es) {
         this.studentService = ss;
         this.courseService = cs;
@@ -41,13 +48,16 @@ public class EnrollmentPanel extends JPanel {
 
         JPanel contentBody = new JPanel(new BorderLayout(0, 30));
         contentBody.setOpaque(false);
-        contentBody.add(createEnrollmentCard(), BorderLayout.NORTH);
-        contentBody.add(createTableCard(), BorderLayout.CENTER);
+        contentBody.add(createEnrollmentCard(), BorderLayout.NORTH); // Dio za upis
+        contentBody.add(createTableCard(), BorderLayout.CENTER);   // Dio za pregled/ocjenu
 
         add(contentBody, BorderLayout.CENTER);
         refreshTable();
     }
 
+    /**
+     * Inicijalizuje naslov i opis sekcije u gornjem dijelu panela.
+     */
     private void initHeader() {
         JPanel header = new JPanel(new GridLayout(2, 1, 0, 5));
         header.setOpaque(false);
@@ -62,6 +72,10 @@ public class EnrollmentPanel extends JPanel {
         add(header, BorderLayout.NORTH);
     }
 
+    /**
+     * Kreira "karticu" sa formom za brz upis studenta na predmet.
+     * @return JPanel sa stilizovanim ComboBox-ovima i dugmetom.
+     */
     private JPanel createEnrollmentCard() {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(COLOR_CARD);
@@ -74,19 +88,17 @@ public class EnrollmentPanel extends JPanel {
         inputs.setOpaque(false);
 
         comboStudents = createStyledCombo();
-        loadStudents();
+        loadStudents(); // Punjenje podacima iz baze
         inputs.add(createFieldWrapper("STUDENT", comboStudents));
 
         comboCourses = createStyledCombo();
-        loadCourses();
+        loadCourses(); // Punjenje podacima iz baze
         inputs.add(createFieldWrapper("PREDMET", comboCourses));
 
         JButton btnEnroll = new JButton("UPISI STUDENTA");
         btnEnroll.setBackground(COLOR_ACCENT);
         btnEnroll.setForeground(Color.WHITE);
         btnEnroll.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnEnroll.setFocusPainted(false);
-        btnEnroll.setBorder(new EmptyBorder(10, 20, 10, 20));
         btnEnroll.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnEnroll.addActionListener(e -> handleEnrollment());
 
@@ -100,6 +112,10 @@ public class EnrollmentPanel extends JPanel {
         return card;
     }
 
+    /**
+     * Kreira tabelarni prikaz svih aktivnih upisa.
+     * Omogućava otvaranje dijaloga za ocjenjivanje putem dvoklika na red.
+     */
     private JPanel createTableCard() {
         JPanel card = new JPanel(new BorderLayout(0, 15));
         card.setBackground(COLOR_CARD);
@@ -112,18 +128,16 @@ public class EnrollmentPanel extends JPanel {
 
         table = new JTable(tableModel);
         table.setRowHeight(50);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        table.setGridColor(new Color(241, 245, 249));
         table.setSelectionBackground(COLOR_SELECTION);
-        table.setSelectionForeground(Color.WHITE);
         table.setShowVerticalLines(false);
 
+        // Header tabele
         JTableHeader header = table.getTableHeader();
         header.setBackground(new Color(241, 245, 249));
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setForeground(COLOR_TEXT_MAIN);
         header.setPreferredSize(new Dimension(0, 45));
 
+        // Listener za dvoklik
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2) openGrading();
@@ -136,6 +150,60 @@ public class EnrollmentPanel extends JPanel {
         card.add(sp, BorderLayout.CENTER);
         return card;
     }
+
+    /**
+     * Otvara GradingDialog za selektovani red u tabeli.
+     */
+    private void openGrading() {
+        int row = table.getSelectedRow();
+        if (row != -1) {
+            String idx = table.getValueAt(row, 0).toString();
+            String code = table.getValueAt(row, 1).toString();
+            String year = table.getValueAt(row, 2).toString();
+
+            enrollmentService.getEnrollment(idx, code, year).ifPresent(enr -> {
+                GradingDialog gd = new GradingDialog((Frame) SwingUtilities.getWindowAncestor(this), enrollmentService, enr);
+                gd.setVisible(true);
+                if (gd.isSuccess()) refreshTable();
+            });
+        }
+    }
+
+    /**
+     * Osvježava podatke u tabeli povlačenjem najnovijih upisa iz baze.
+     */
+    public void refreshTable() {
+        tableModel.setRowCount(0);
+        enrollmentService.getAllEnrollments().forEach(e -> {
+            tableModel.addRow(new Object[]{
+                    e.getStudentIndexNumber(), e.getCourseCode(), e.getAcademicYear(),
+                    (e.getGrade() == null || e.getGrade() == 0) ? "Nije ocjenjen" : e.getGrade(),
+                    e.getGradeDate() != null ? e.getGradeDate() : "-"
+            });
+        });
+    }
+
+    /**
+     * Vrši upis studenta na predmet pozivanjem EnrollmentService-a.
+     * Automatski prepoznaje trenutno ulogovanog referenta.
+     */
+    private void handleEnrollment() {
+        try {
+            String sid = ((String)comboStudents.getSelectedItem()).split(" - ")[0];
+            String cid = ((String)comboCourses.getSelectedItem()).split(" - ")[0];
+            String ref = (ReferentService.getCurrentUser() != null) ? ReferentService.getCurrentUser().getReferentId() : "SISTEM";
+
+            enrollmentService.registerNewEnrollment(new Enrollment(sid, cid, "2024/2025", null, null, null, null, ref, null));
+            JOptionPane.showMessageDialog(this, "Student uspješno upisan!");
+            refreshTable();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Greška", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Pomoćne metode za učitavanje podataka u ComboBox-ove
+    private void loadStudents() { studentService.getAllStudents().forEach(s -> comboStudents.addItem(s.getIndexNumber() + " - " + s.getFirstName() + " " + s.getLastName())); }
+    private void loadCourses() { courseService.getAllCourses().forEach(c -> comboCourses.addItem(c.getCourseCode() + " - " + c.getName())); }
 
     private JComboBox<String> createStyledCombo() {
         JComboBox<String> cb = new JComboBox<>();
@@ -153,46 +221,5 @@ public class EnrollmentPanel extends JPanel {
         p.add(l, BorderLayout.NORTH);
         p.add(c, BorderLayout.CENTER);
         return p;
-    }
-
-    private void openGrading() {
-        int row = table.getSelectedRow();
-        if (row != -1) {
-            String idx = table.getValueAt(row, 0).toString();
-            String code = table.getValueAt(row, 1).toString();
-            String year = table.getValueAt(row, 2).toString();
-
-            enrollmentService.getEnrollment(idx, code, year).ifPresent(enr -> {
-                GradingDialog gd = new GradingDialog((Frame) SwingUtilities.getWindowAncestor(this), enrollmentService, enr);
-                gd.setVisible(true);
-                if (gd.isSuccess()) refreshTable();
-            });
-        }
-    }
-
-    private void refreshTable() {
-        tableModel.setRowCount(0);
-        enrollmentService.getAllEnrollments().forEach(e -> {
-            tableModel.addRow(new Object[]{
-                    e.getStudentIndexNumber(), e.getCourseCode(), e.getAcademicYear(),
-                    (e.getGrade() == null || e.getGrade() == 0) ? "Nije ocjenjen" : e.getGrade(),
-                    e.getGradeDate() != null ? e.getGradeDate() : "-"
-            });
-        });
-    }
-
-    private void loadStudents() { studentService.getAllStudents().forEach(s -> comboStudents.addItem(s.getIndexNumber() + " - " + s.getFirstName() + " " + s.getLastName())); }
-    private void loadCourses() { courseService.getAllCourses().forEach(c -> comboCourses.addItem(c.getCourseCode() + " - " + c.getName())); }
-
-    private void handleEnrollment() {
-        try {
-            String sid = ((String)comboStudents.getSelectedItem()).split(" - ")[0];
-            String cid = ((String)comboCourses.getSelectedItem()).split(" - ")[0];
-            String ref = (ReferentService.getCurrentUser() != null) ? ReferentService.getCurrentUser().getReferentId() : "SISTEM";
-
-            enrollmentService.registerNewEnrollment(new Enrollment(sid, cid, "2024/2025", null, null, null, null, ref, null));
-            JOptionPane.showMessageDialog(this, "Student uspješno upisan!");
-            refreshTable();
-        } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Greška", JOptionPane.ERROR_MESSAGE); }
     }
 }
